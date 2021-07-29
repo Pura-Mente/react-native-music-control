@@ -288,9 +288,9 @@ public class MusicControlNotification {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 stopForeground(true);
+            } else {
+                stopSelf();
             }
-
-            stopSelf();
         }
     }
 }
