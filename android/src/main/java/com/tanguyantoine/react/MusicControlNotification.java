@@ -273,6 +273,7 @@ public class MusicControlNotification {
             if (MusicControlModule.INSTANCE != null) {
                 MusicControlModule.INSTANCE.destroy();
             }
+            waitALittle();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 stopForeground(true);
             }
@@ -286,11 +287,20 @@ public class MusicControlNotification {
                 MusicControlModule.INSTANCE.destroy();
             }
 
+            waitALittle();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 stopForeground(true);
             }
 
             stopSelf();
+        }
+
+        private void waitALittle() {
+            try {
+                Thread.sleep(150);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
