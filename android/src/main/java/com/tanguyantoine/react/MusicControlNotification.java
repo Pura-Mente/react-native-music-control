@@ -276,8 +276,9 @@ public class MusicControlNotification {
             waitALittle();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 stopForeground(true);
+            } else {
+                stopSelf(); // Stop the service as we won't need it anymore
             }
-            stopSelf(); // Stop the service as we won't need it anymore
         }
 
         @Override
@@ -290,9 +291,9 @@ public class MusicControlNotification {
             waitALittle();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 stopForeground(true);
+            } else {
+                stopSelf();
             }
-
-            stopSelf();
         }
 
         private void waitALittle() {
