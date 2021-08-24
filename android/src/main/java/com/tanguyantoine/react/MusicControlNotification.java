@@ -182,6 +182,13 @@ public class MusicControlNotification {
     }
 
     public static class NotificationService extends Service {
+        public enum MusicControlServiceStatus {
+            INITIAL,
+            STARTED,
+            STOPPED,
+            DESTROYED
+        }
+        MusicControlServiceStatus musicControlServiceStatus = MusicControlServiceStatus.INITIAL;
 
         private final LocalBinder binder = new LocalBinder();
         public class LocalBinder extends Binder {
@@ -225,6 +232,7 @@ public class MusicControlNotification {
                     notification = MusicControlModule.INSTANCE.notification.prepareNotification(MusicControlModule.INSTANCE.nb, false);
                     // call startForeground just after startForegroundService.
                     startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification);
+                    musicControlServiceStatus = MusicControlServiceStatus.STARTED;
                 }catch (Exception ex){
                     ex.printStackTrace();
                 }                
@@ -241,7 +249,8 @@ public class MusicControlNotification {
                     MusicControlModule.INSTANCE.init();
                 }
                 notification = MusicControlModule.INSTANCE.notification.prepareNotification(MusicControlModule.INSTANCE.nb, false);
-               startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification);
+                startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification);
+                musicControlServiceStatus = MusicControlServiceStatus.STARTED;
             }catch (Exception ex){
                 ex.printStackTrace();
             }
@@ -260,6 +269,7 @@ public class MusicControlNotification {
                 try {
                     notification = MusicControlModule.INSTANCE.notification.prepareNotification(MusicControlModule.INSTANCE.nb, false);
                     startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification);
+                    musicControlServiceStatus = MusicControlServiceStatus.STARTED;
                 }catch (Exception ex){
                     ex.printStackTrace();
                 }
@@ -271,26 +281,32 @@ public class MusicControlNotification {
         public void onTaskRemoved(Intent rootIntent) {
             waitALittle();
             // Destroy the notification and sessions when the task is removed (closed, killed, etc)
-            if (MusicControlModule.INSTANCE != null) {
-                MusicControlModule.INSTANCE.destroy();
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                stopForeground(true);
-            } else {
-                stopSelf(); // Stop the service as we won't need it anymore
+            if(musicControlServiceStatus == MusicControlServiceStatus.STARTED) {
+                if (MusicControlModule.INSTANCE != null) {
+                    MusicControlModule.INSTANCE.destroy();
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    stopForeground(true);
+                } else {
+                    stopSelf(); // Stop the service as we won't need it anymore
+                }
+                musicControlServiceStatus = MusicControlServiceStatus.STOPPED;
             }
         }
 
         @Override
         public void onDestroy() {
             waitALittle();
-            if (MusicControlModule.INSTANCE != null) {
-                MusicControlModule.INSTANCE.destroy();
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                stopForeground(true);
-            } else {
-                stopSelf();
+            if(musicControlServiceStatus == MusicControlServiceStatus.STARTED) {
+                if (MusicControlModule.INSTANCE != null) {
+                    MusicControlModule.INSTANCE.destroy();
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    stopForeground(true);
+                } else {
+                    stopSelf();
+                }
+                musicControlServiceStatus = MusicControlServiceStatus.DESTROYED;
             }
         }
 
