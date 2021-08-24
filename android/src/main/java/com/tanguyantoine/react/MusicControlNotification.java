@@ -269,11 +269,11 @@ public class MusicControlNotification {
 
         @Override
         public void onTaskRemoved(Intent rootIntent) {
+            waitALittle();
             // Destroy the notification and sessions when the task is removed (closed, killed, etc)
             if (MusicControlModule.INSTANCE != null) {
                 MusicControlModule.INSTANCE.destroy();
             }
-            waitALittle();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 stopForeground(true);
             } else {
@@ -283,12 +283,10 @@ public class MusicControlNotification {
 
         @Override
         public void onDestroy() {
-
+            waitALittle();
             if (MusicControlModule.INSTANCE != null) {
                 MusicControlModule.INSTANCE.destroy();
             }
-
-            waitALittle();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 stopForeground(true);
             } else {
