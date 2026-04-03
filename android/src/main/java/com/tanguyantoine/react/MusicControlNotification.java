@@ -232,24 +232,18 @@ public class MusicControlNotification {
         }
 
         public void forceForeground() {
-            // API lower than 26 do not need this work around.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 try {
-                    Intent intent = new Intent(MusicControlNotification.NotificationService.this,
-                            MusicControlNotification.NotificationService.class);
-                    // service has already been initialized.
-                    // startForeground method should be called within 5 seconds.
-                    ContextCompat.startForegroundService(MusicControlNotification.NotificationService.this, intent);
-
-                    if (MusicControlModule.INSTANCE == null) {
-                        MusicControlModule.INSTANCE.init();
+                    if (MusicControlModule.INSTANCE == null || MusicControlModule.INSTANCE.notification == null
+                            || MusicControlModule.INSTANCE.nb == null) {
+                        stopSelf();
+                        return;
                     }
-
+                    Intent intent = new Intent(this, MusicControlNotification.NotificationService.class);
+                    ContextCompat.startForegroundService(this, intent);
                     notification = MusicControlModule.INSTANCE.notification
                             .prepareNotification(MusicControlModule.INSTANCE.nb, false);
-                    // call startForeground just after startForegroundService.
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        // add foreground service type for Android >= Q
                         startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification,
                                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
                     } else {
@@ -257,23 +251,43 @@ public class MusicControlNotification {
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
+                    startForegroundAndStop();
                 }
             }
         }
 
         private Notification notification;
 
+        private void startForegroundAndStop() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                int id = MusicControlModule.INSTANCE != null ? MusicControlModule.INSTANCE.getNotificationId() : 100;
+                try {
+                    Notification placeholder = new NotificationCompat.Builder(this, "react-native-music-control")
+                            .setSmallIcon(android.R.drawable.ic_media_play)
+                            .build();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        startForeground(id, placeholder, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+                    } else {
+                        startForeground(id, placeholder);
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            stopSelf();
+        }
+
         @Override
         public void onCreate() {
             super.onCreate();
             try {
-                if (MusicControlModule.INSTANCE == null) {
-                    MusicControlModule.INSTANCE.init();
+                if (MusicControlModule.INSTANCE == null || MusicControlModule.INSTANCE.notification == null
+                        || MusicControlModule.INSTANCE.nb == null) {
+                    startForegroundAndStop();
+                    return;
                 }
                 notification = MusicControlModule.INSTANCE.notification
                         .prepareNotification(MusicControlModule.INSTANCE.nb, false);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    // add foreground service type for Android >= Q
                     startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification,
                             ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
                 } else {
@@ -281,24 +295,22 @@ public class MusicControlNotification {
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
+                startForegroundAndStop();
             }
         }
 
         @Override
         public int onStartCommand(Intent intent, int flags, int startId) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                if (MusicControlModule.INSTANCE == null) {
-                    try {
-                        MusicControlModule.INSTANCE.init();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
                 try {
+                    if (MusicControlModule.INSTANCE == null || MusicControlModule.INSTANCE.notification == null
+                            || MusicControlModule.INSTANCE.nb == null) {
+                        startForegroundAndStop();
+                        return START_NOT_STICKY;
+                    }
                     notification = MusicControlModule.INSTANCE.notification
                             .prepareNotification(MusicControlModule.INSTANCE.nb, false);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        // add foreground service type for Android >= Q
                         startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification,
                                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
                     } else {
@@ -306,6 +318,7 @@ public class MusicControlNotification {
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
+                    startForegroundAndStop();
                 }
             }
             return START_NOT_STICKY;
