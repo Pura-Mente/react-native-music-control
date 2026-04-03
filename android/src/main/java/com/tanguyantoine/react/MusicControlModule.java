@@ -3,14 +3,12 @@ package com.tanguyantoine.react;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.content.ComponentCallbacks2;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Context;
 import androidx.core.content.ContextCompat;
 import android.content.ServiceConnection;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
@@ -41,7 +39,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-public class MusicControlModule extends ReactContextBaseJavaModule implements ComponentCallbacks2 {
+public class MusicControlModule extends ReactContextBaseJavaModule {
     private static final String TAG = MusicControlModule.class.getSimpleName();
 
     static MusicControlModule INSTANCE;
@@ -205,7 +203,11 @@ public class MusicControlModule extends ReactContextBaseJavaModule implements Co
         filter.addAction(Intent.ACTION_MEDIA_BUTTON);
         filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
         receiver = new MusicControlReceiver(this, context);
-        context.registerReceiver(receiver, filter);
+        if (Build.VERSION.SDK_INT >= 34 && context.getApplicationInfo().targetSdkVersion >= 34) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            context.registerReceiver(receiver, filter);
+        }
 
         Intent myIntent = new Intent(context, MusicControlNotification.NotificationService.class);
 
@@ -221,8 +223,6 @@ public class MusicControlModule extends ReactContextBaseJavaModule implements Co
         } else {
             context.startService(myIntent);
         }
-
-        context.registerComponentCallbacks(this);
 
         isPlaying = false;
         init = true;
@@ -280,7 +280,6 @@ public class MusicControlModule extends ReactContextBaseJavaModule implements Co
         ReactApplicationContext context = getReactApplicationContext();
 
         context.unregisterReceiver(receiver);
-        context.unregisterComponentCallbacks(this);
 
         if (artworkThread != null && artworkThread.isAlive())
             artworkThread.interrupt();
@@ -618,35 +617,6 @@ public class MusicControlModule extends ReactContextBaseJavaModule implements Co
         }
 
         return bitmap;
-    }
-
-    @Override
-    public void onTrimMemory(int level) {
-        switch (level) {
-            // Trims memory when it reaches a moderate level and the session is inactive
-            case ComponentCallbacks2.TRIM_MEMORY_MODERATE:
-            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE:
-            case ComponentCallbacks2.TRIM_MEMORY_COMPLETE:
-                if (session != null && session.isActive())
-                    break;
-
-                // Trims memory when it reaches a critical level
-            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL:
-                Log.w(TAG, "Control resources are being removed due to system's low memory (Level: " + level + ")");
-                destroy();
-                break;
-        }
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-
-    }
-
-    @Override
-    public void onLowMemory() {
-        Log.w(TAG, "Control resources are being removed due to system's low memory (Level: MEMORY_COMPLETE)");
-        destroy();
     }
 
     public enum NotificationClose {
