@@ -1,5 +1,6 @@
 package com.tanguyantoine.react;
 
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -209,19 +210,22 @@ public class MusicControlModule extends ReactContextBaseJavaModule {
             context.registerReceiver(receiver, filter);
         }
 
-        Intent myIntent = new Intent(context, MusicControlNotification.NotificationService.class);
-
         afListener = new MusicControlAudioFocusListener(context, emitter, volume);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Try to bind the service
-            try {
-                context.bindService(myIntent, connection, Context.BIND_AUTO_CREATE);
-            } catch (Exception ignored) {
-                ContextCompat.startForegroundService(context, myIntent);
+        if (isAppInForeground(context)) {
+            Intent myIntent = new Intent(context, MusicControlNotification.NotificationService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                try {
+                    context.bindService(myIntent, connection, Context.BIND_AUTO_CREATE);
+                } catch (Exception ignored) {
+                    try {
+                        ContextCompat.startForegroundService(context, myIntent);
+                    } catch (Exception ignored2) {
+                    }
+                }
+            } else {
+                context.startService(myIntent);
             }
-        } else {
-            context.startService(myIntent);
         }
 
         isPlaying = false;
@@ -617,6 +621,21 @@ public class MusicControlModule extends ReactContextBaseJavaModule {
         }
 
         return bitmap;
+    }
+
+    private static boolean isAppInForeground(Context context) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        if (am == null) return false;
+        java.util.List<ActivityManager.RunningAppProcessInfo> processes = am.getRunningAppProcesses();
+        if (processes == null) return false;
+        String packageName = context.getPackageName();
+        for (ActivityManager.RunningAppProcessInfo process : processes) {
+            if (process.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
+                    && process.processName.equals(packageName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public enum NotificationClose {
