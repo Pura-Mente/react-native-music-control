@@ -624,18 +624,9 @@ public class MusicControlModule extends ReactContextBaseJavaModule {
     }
 
     static boolean isAppInForeground(Context context) {
-        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        if (am == null) return false;
-        java.util.List<ActivityManager.RunningAppProcessInfo> processes = am.getRunningAppProcesses();
-        if (processes == null) return false;
-        String packageName = context.getPackageName();
-        for (ActivityManager.RunningAppProcessInfo process : processes) {
-            if (process.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
-                    && process.processName.equals(packageName)) {
-                return true;
-            }
-        }
-        return false;
+        ActivityManager.RunningAppProcessInfo info = new ActivityManager.RunningAppProcessInfo();
+        ActivityManager.getMyMemoryState(info);
+        return info.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
     }
 
     public enum NotificationClose {
