@@ -623,7 +623,7 @@ public class MusicControlModule extends ReactContextBaseJavaModule {
         return bitmap;
     }
 
-    private static boolean isAppInForeground(Context context) {
+    static boolean isAppInForeground(Context context) {
         ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         if (am == null) return false;
         java.util.List<ActivityManager.RunningAppProcessInfo> processes = am.getRunningAppProcesses();

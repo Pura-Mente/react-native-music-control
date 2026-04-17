@@ -232,59 +232,19 @@ public class MusicControlNotification {
         }
 
         public void forceForeground() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                try {
-                    if (MusicControlModule.INSTANCE == null || MusicControlModule.INSTANCE.notification == null
-                            || MusicControlModule.INSTANCE.nb == null) {
-                        stopSelf();
-                        return;
-                    }
-                    Intent intent = new Intent(this, MusicControlNotification.NotificationService.class);
-                    ContextCompat.startForegroundService(this, intent);
-                    notification = MusicControlModule.INSTANCE.notification
-                            .prepareNotification(MusicControlModule.INSTANCE.nb, false);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification,
-                                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
-                    } else {
-                        startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification);
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    startForegroundAndStop();
-                }
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+            if (MusicControlModule.INSTANCE == null || MusicControlModule.INSTANCE.notification == null
+                    || MusicControlModule.INSTANCE.nb == null) {
+                stopSelf();
+                return;
             }
-        }
-
-        private Notification notification;
-
-        private void startForegroundAndStop() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                int id = MusicControlModule.INSTANCE != null ? MusicControlModule.INSTANCE.getNotificationId() : 100;
-                try {
-                    Notification placeholder = new NotificationCompat.Builder(this, "react-native-music-control")
-                            .setSmallIcon(android.R.drawable.ic_media_play)
-                            .build();
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        startForeground(id, placeholder, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
-                    } else {
-                        startForeground(id, placeholder);
-                    }
-                } catch (Exception ignored) {
-                }
+            if (!MusicControlModule.isAppInForeground(this)) {
+                stopSelf();
+                return;
             }
-            stopSelf();
-        }
-
-        @Override
-        public void onCreate() {
-            super.onCreate();
             try {
-                if (MusicControlModule.INSTANCE == null || MusicControlModule.INSTANCE.notification == null
-                        || MusicControlModule.INSTANCE.nb == null) {
-                    startForegroundAndStop();
-                    return;
-                }
+                Intent intent = new Intent(this, MusicControlNotification.NotificationService.class);
+                ContextCompat.startForegroundService(this, intent);
                 notification = MusicControlModule.INSTANCE.notification
                         .prepareNotification(MusicControlModule.INSTANCE.nb, false);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -295,31 +255,63 @@ public class MusicControlNotification {
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
-                startForegroundAndStop();
+                stopSelf();
+            }
+        }
+
+        private Notification notification;
+
+        @Override
+        public void onCreate() {
+            super.onCreate();
+            if (MusicControlModule.INSTANCE == null || MusicControlModule.INSTANCE.notification == null
+                    || MusicControlModule.INSTANCE.nb == null) {
+                stopSelf();
+                return;
+            }
+            if (!MusicControlModule.isAppInForeground(this)) {
+                stopSelf();
+                return;
+            }
+            try {
+                notification = MusicControlModule.INSTANCE.notification
+                        .prepareNotification(MusicControlModule.INSTANCE.nb, false);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification,
+                            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+                } else {
+                    startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification);
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                stopSelf();
             }
         }
 
         @Override
         public int onStartCommand(Intent intent, int flags, int startId) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                try {
-                    if (MusicControlModule.INSTANCE == null || MusicControlModule.INSTANCE.notification == null
-                            || MusicControlModule.INSTANCE.nb == null) {
-                        startForegroundAndStop();
-                        return START_NOT_STICKY;
-                    }
-                    notification = MusicControlModule.INSTANCE.notification
-                            .prepareNotification(MusicControlModule.INSTANCE.nb, false);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification,
-                                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
-                    } else {
-                        startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification);
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    startForegroundAndStop();
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return START_NOT_STICKY;
+            if (MusicControlModule.INSTANCE == null || MusicControlModule.INSTANCE.notification == null
+                    || MusicControlModule.INSTANCE.nb == null) {
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+            if (!MusicControlModule.isAppInForeground(this)) {
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+            try {
+                notification = MusicControlModule.INSTANCE.notification
+                        .prepareNotification(MusicControlModule.INSTANCE.nb, false);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification,
+                            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+                } else {
+                    startForeground(MusicControlModule.INSTANCE.getNotificationId(), notification);
                 }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                stopSelf();
             }
             return START_NOT_STICKY;
         }
