@@ -269,10 +269,12 @@ public class MusicControlNotification {
                 stopSelf();
                 return;
             }
-            if (!MusicControlModule.isAppInForeground(this)) {
-                stopSelf();
-                return;
-            }
+            // Note: no isAppInForeground() check here. During service creation the process
+            // importance is IMPORTANCE_SERVICE (300), not IMPORTANCE_FOREGROUND_SERVICE (125),
+            // because startForeground hasn't run yet — so a check here produces false negatives
+            // that stopSelf() the service mid-creation, triggering an init/re-init loop that
+            // Android mutes as "noisy" notifications. The guard in MusicControlModule.init()
+            // already prevents starting the service from a backgrounded process.
             try {
                 notification = MusicControlModule.INSTANCE.notification
                         .prepareNotification(MusicControlModule.INSTANCE.nb, false);
@@ -296,10 +298,7 @@ public class MusicControlNotification {
                 stopSelf();
                 return START_NOT_STICKY;
             }
-            if (!MusicControlModule.isAppInForeground(this)) {
-                stopSelf();
-                return START_NOT_STICKY;
-            }
+            // Note: no isAppInForeground() check here — see onCreate comment.
             try {
                 notification = MusicControlModule.INSTANCE.notification
                         .prepareNotification(MusicControlModule.INSTANCE.nb, false);
