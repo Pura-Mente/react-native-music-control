@@ -238,10 +238,11 @@ public class MusicControlNotification {
                 stopSelf();
                 return;
             }
-            if (!MusicControlModule.isAppInForeground(this)) {
-                stopSelf();
-                return;
-            }
+            // Note: no isAppInForeground() check here. The init()-level check already gated
+            // the bindService call that led here; repeating the check in release builds
+            // produces false negatives (likely R8 reshaping getMyMemoryState evaluation),
+            // firing stopSelf() and destroying the service mid-setup. If startForeground
+            // actually fails due to OS foreground restrictions, the catch below handles it.
             try {
                 Intent intent = new Intent(this, MusicControlNotification.NotificationService.class);
                 ContextCompat.startForegroundService(this, intent);
